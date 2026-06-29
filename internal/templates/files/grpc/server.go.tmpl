@@ -1,0 +1,78 @@
+// Package grpcsrv owns the gRPC server wiring for {{ .ProjectName }}.
+package grpcsrv
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
+)
+
+// Server bundles the underlying *grpc.Server with its listening address.
+type Server struct {
+	addr   string
+	srv    *grpc.Server
+	logger *slog.Logger
+	health *health.Server
+}
+
+// New constructs a gRPC server with health-check and reflection registered.
+// Register your application services on Server.Underlying() before Start().
+func New(addr string, logger *slog.Logger) *Server {
+	srv := grpc.NewServer(
+		grpc.UnaryInterceptor(unaryLogger(logger)),
+	)
+
+	h := health.NewServer()
+	healthpb.RegisterHealthServer(srv, h)
+	h.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	reflection.Register(srv)
+
+	return &Server{addr: addr, srv: srv, logger: logger, health: h}
+}
+
+// Underlying exposes the *grpc.Server so callers can register services.
+func (s *Server) Underlying() *grpc.Server { return s.srv }
+
+// Start binds the listener and serves in the caller's goroutine.
+func (s *Server) Start() error {
+	lis, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		return fmt.Errorf("listen %s: %w", s.addr, err)
+	}
+	s.logger.Info("grpc serving", "addr", s.addr)
+	return s.srv.Serve(lis)
+}
+
+// Stop performs a graceful shutdown, bounded by the supplied context.
+func (s *Server) Stop(ctx context.Context) {
+	stopped := make(chan struct{})
+	go func() {
+		s.srv.GracefulStop()
+		close(stopped)
+	}()
+	select {
+	case <-stopped:
+	case <-ctx.Done():
+		s.srv.Stop()
+	}
+}
+
+func unaryLogger(logger *slog.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		start := time.Now()
+		resp, err := handler(ctx, req)
+		logger.Info("grpc",
+			"method", info.FullMethod,
+			"err", err,
+			"duration_ms", time.Since(start).Milliseconds(),
+		)
+		return resp, err
+	}
+}

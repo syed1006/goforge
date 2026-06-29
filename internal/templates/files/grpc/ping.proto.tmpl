@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package {{ snake .ProjectName }}.v1;
+
+// PingService is a placeholder gRPC service. Replace it with your own.
+service PingService {
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {
+  string message = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}

@@ -1,0 +1,15 @@
+{{- if .GRPC }}
+
+	grpcServer := grpcsrv.New(cfg.GRPCAddr, logger)
+	go func() {
+		if err := grpcServer.Start(); err != nil {
+			logger.Error("grpc server", "err", err)
+			stop()
+		}
+	}()
+	defer func() {
+		grpcCtx, grpcCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer grpcCancel()
+		grpcServer.Stop(grpcCtx)
+	}()
+{{- end }}

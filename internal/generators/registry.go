@@ -6,6 +6,7 @@ import (
 	"github.com/syed1006/goforge/internal/generators/base"
 	"github.com/syed1006/goforge/internal/generators/database"
 	"github.com/syed1006/goforge/internal/generators/framework"
+	grpcgen "github.com/syed1006/goforge/internal/generators/grpc"
 )
 
 // Default returns the default generator registry, with generators registered
@@ -15,5 +16,6 @@ func Default() *generator.Registry {
 	reg.Register(base.New())
 	reg.Register(framework.All()...)
 	reg.Register(database.All()...)
+	reg.Register(grpcgen.New())
 	return reg
 }
