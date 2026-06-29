@@ -10,10 +10,8 @@ import (
 	"text/template"
 )
 
-// Engine renders templates that have been pre-parsed from an io/fs.FS.
-//
-// Templates are referenced by their path relative to the root of the FS, with
-// the `.tmpl` suffix stripped. So `base/main.go.tmpl` is rendered as `base/main.go`.
+// Engine renders templates pre-parsed from an io/fs.FS. Templates are named by
+// their path with the .tmpl suffix stripped.
 type Engine struct {
 	tmpl *template.Template
 }
@@ -59,7 +57,7 @@ func (e *Engine) Render(name string, data any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Names returns every template name registered with the engine (useful for diagnostics).
+// Names returns every registered template name.
 func (e *Engine) Names() []string {
 	var out []string
 	for _, t := range e.tmpl.Templates() {

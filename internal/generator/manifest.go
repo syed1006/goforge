@@ -6,8 +6,7 @@ import (
 	"strings"
 )
 
-// Manifest collects go.mod requirements declared by individual generators so the
-// base generator can emit a single consolidated go.mod at the end.
+// Manifest collects go.mod requirements declared by generators.
 type Manifest struct {
 	GoVersion string
 	requires  map[string]string
@@ -23,14 +22,12 @@ func NewManifest(goVersion string) *Manifest {
 	}
 }
 
-// Require records a runtime dependency. The latest registered version wins so
-// later generators can override the default chosen by an earlier one.
+// Require records a runtime dependency; later calls override earlier ones.
 func (m *Manifest) Require(module, version string) {
 	m.requires[module] = version
 }
 
-// Tool records a developer tool (not a runtime dependency) — surfaced in README
-// install hints and pre-commit configs but not written to go.mod.
+// Tool records a developer-tool install hint (not a runtime dependency).
 func (m *Manifest) Tool(name, hint string) {
 	m.tools[name] = hint
 }

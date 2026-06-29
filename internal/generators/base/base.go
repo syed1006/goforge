@@ -1,5 +1,4 @@
-// Package base provides the framework-independent generator that writes the
-// repository boilerplate every project shares.
+// Package base generates the framework-independent repository boilerplate.
 package base
 
 import (

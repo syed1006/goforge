@@ -1,5 +1,4 @@
-// Package hotreload writes an air configuration so the generated project
-// supports a `make dev` / `air` workflow out of the box.
+// Package hotreload generates the .air.toml configuration.
 package hotreload
 
 import (

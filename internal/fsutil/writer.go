@@ -14,32 +14,29 @@ import (
 type Mode int
 
 const (
-	// ModeError aborts when a file already exists at the destination path.
 	ModeError Mode = iota
-	// ModeOverwrite replaces any existing file at the destination path.
 	ModeOverwrite
-	// ModeSkip leaves any existing file at the destination path unchanged.
 	ModeSkip
 )
 
 // Writer commits files relative to a fixed root directory.
 type Writer struct {
-	root     string
-	mode     Mode
-	logSink  io.Writer
-	dryRun   bool
+	root    string
+	mode    Mode
+	logSink io.Writer
+	dryRun  bool
 }
 
 // Option configures a Writer.
 type Option func(*Writer)
 
-// WithMode controls the collision behavior of subsequent Write calls.
+// WithMode controls the collision behavior on existing files.
 func WithMode(m Mode) Option { return func(w *Writer) { w.mode = m } }
 
-// WithLog routes per-write activity messages to the provided sink.
+// WithLog routes per-write activity messages to sink.
 func WithLog(sink io.Writer) Option { return func(w *Writer) { w.logSink = sink } }
 
-// DryRun prevents any disk mutation but still logs the intended writes.
+// DryRun prevents disk mutation while still logging intended writes.
 func DryRun(on bool) Option { return func(w *Writer) { w.dryRun = on } }
 
 // NewWriter returns a Writer rooted at root. The directory is created if absent.

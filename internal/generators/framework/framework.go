@@ -1,8 +1,4 @@
-// Package framework holds the HTTP framework generators.
-//
-// Each supported framework owns the entrypoint (cmd/<bin>/main.go) and the
-// http server wiring (internal/server). Exactly one of these generators runs
-// per scaffold, selected by the cfg.Framework value.
+// Package framework generates HTTP framework scaffolds; exactly one runs per project.
 package framework
 
 import (

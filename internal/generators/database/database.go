@@ -1,7 +1,4 @@
-// Package database holds the storage driver generators.
-//
-// Exactly one of these generators runs per scaffold (selected by cfg.Database),
-// and each writes internal/storage/storage.go plus the module deps it needs.
+// Package database generates storage driver scaffolds; exactly one runs per project.
 package database
 
 import (
@@ -9,8 +6,7 @@ import (
 	"github.com/syed1006/goforge/internal/generator"
 )
 
-// All returns every database generator (one per supported driver, plus a noop
-// for cfg.Database == none — implemented by simply having Applies() return false).
+// All returns one generator per supported driver.
 func All() []generator.Generator {
 	return []generator.Generator{
 		newImpl(config.DatabasePostgres, "postgres", []moduleDep{{"github.com/jackc/pgx/v5", "latest"}}),

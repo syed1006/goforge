@@ -1,15 +1,4 @@
-// Package graphql holds the gqlgen-based GraphQL generator.
-//
-// Produces:
-//   - graph/schema.graphqls            — sample schema
-//   - gqlgen.yml                       — gqlgen config
-//   - graph/resolver.go                — Resolver root (handwritten; gqlgen
-//                                        will not overwrite it)
-//   - internal/graphql/handler.go      — framework-agnostic HTTP handler
-//
-// The orchestrator runs `gqlgen generate` as a post-step (see internal/scaffold)
-// when c.GraphQL is true so the generated `graph/generated.go` and
-// `graph/schema.resolvers.go` exist before the project is first built.
+// Package graphql generates the gqlgen-based GraphQL scaffold.
 package graphql
 
 import (

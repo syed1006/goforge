@@ -32,8 +32,7 @@ type Config struct {
 	{{- end }}
 }
 
-// Load returns a Config populated from environment variables, falling back to
-// reasonable defaults for local development.
+// Load reads config from the environment, falling back to dev defaults.
 func Load() (*Config, error) {
 	cfg := &Config{
 		HTTPAddr:     getenv("HTTP_ADDR", ":8080"),

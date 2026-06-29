@@ -1,11 +1,4 @@
-// Package grpc owns the gRPC scaffold.
-//
-// Produces:
-//   - internal/grpcsrv/server.go   — wrapper around *grpc.Server with health+reflection
-//   - proto/<service>/v1/<service>.proto — sample protobuf file
-//   - buf.yaml, buf.gen.yaml      — buf configuration
-//
-// Runtime deps registered on the manifest: google.golang.org/grpc.
+// Package grpc generates the gRPC scaffold: server wrapper, buf config, sample proto.
 package grpc
 
 import (

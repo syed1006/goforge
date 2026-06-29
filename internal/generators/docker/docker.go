@@ -1,9 +1,4 @@
-// Package docker writes Dockerfile + docker-compose + .dockerignore.
-//
-// The Dockerfile is a cache-aware multi-stage build that lands on
-// gcr.io/distroless/static:nonroot. docker-compose.yml wires the app together
-// with the chosen database service (postgres / mysql / mongo / redis;
-// sqlite and none ship without a sidecar).
+// Package docker generates Dockerfile, .dockerignore, and docker-compose.yml.
 package docker
 
 import (

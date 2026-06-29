@@ -1,9 +1,4 @@
-// Package lint writes the linting and formatting configuration.
-//
-// Produces:
-//   - .golangci.yml         — golangci-lint config with sensible defaults
-//   - .pre-commit-config.yaml — pre-commit hooks (fmt, mod-tidy, golangci-lint)
-//   - .editorconfig         — common editor settings
+// Package lint generates .golangci.yml, .pre-commit-config.yaml, and .editorconfig.
 package lint
 
 import (

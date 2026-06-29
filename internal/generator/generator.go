@@ -1,5 +1,4 @@
-// Package generator defines the contract every scaffold feature implements
-// and the shared context the orchestrator hands them at runtime.
+// Package generator defines the contract every scaffold feature implements.
 package generator
 
 import (
@@ -8,16 +7,10 @@ import (
 	"github.com/syed1006/goforge/internal/config"
 )
 
-// Generator produces a slice of the final project tree based on the resolved config.
-//
-// Implementations should be stateless and reentrant — the orchestrator may run
-// generators in any order it likes.
+// Generator produces part of the project tree.
 type Generator interface {
-	// Name returns a short, human-readable identifier (used in logs).
 	Name() string
-	// Applies reports whether the generator should run for the given config.
 	Applies(cfg config.Config) bool
-	// Generate produces files via ctx.Writer and registers module deps via ctx.Manifest.
 	Generate(ctx *Context) error
 }
 
@@ -31,8 +24,7 @@ type Writer interface {
 	Write(relPath string, content []byte, mode fs.FileMode) error
 }
 
-// Context is handed to every generator and bundles the resolved config with
-// the rendering and writing capabilities the generator needs.
+// Context bundles everything a Generator needs from the orchestrator.
 type Context struct {
 	Config   config.Config
 	Renderer Renderer
