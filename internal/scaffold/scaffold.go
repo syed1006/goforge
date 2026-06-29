@@ -8,7 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/syed1006/goforge/internal/config"
 	"github.com/syed1006/goforge/internal/fsutil"
@@ -27,6 +29,11 @@ type Options struct {
 }
 
 // Run executes every applicable generator and writes the project tree.
+//
+// Writes go to a sibling staging directory first; on success the staging
+// directory is renamed onto the final path (atomic on the same filesystem).
+// Any failure removes the staging directory, so the final path is either the
+// fully-built project or untouched — never a partial scaffold.
 func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer, opts Options) error {
 	if err := cfg.Validate(); err != nil {
 		return err
@@ -38,19 +45,36 @@ func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer
 	if cfg.OutputDir == "" {
 		cfg.OutputDir = cfg.ProjectName
 	}
-	root, err := filepath.Abs(cfg.OutputDir)
+	final, err := filepath.Abs(cfg.OutputDir)
 	if err != nil {
 		return fmt.Errorf("resolve output dir: %w", err)
 	}
-	if err := guardRoot(root, opts); err != nil {
+	if err := guardRoot(final, opts); err != nil {
 		return err
+	}
+
+	// Dry-run never touches disk, so we can let the writer pretend its root is
+	// the final path. Real runs route every write through a staging dir.
+	workDir := final
+	promoted := false
+	if !opts.DryRun {
+		staging, err := makeStaging(final)
+		if err != nil {
+			return err
+		}
+		workDir = staging
+		defer func() {
+			if !promoted {
+				_ = os.RemoveAll(staging)
+			}
+		}()
 	}
 
 	mode := fsutil.ModeError
 	if opts.Overwrite {
 		mode = fsutil.ModeOverwrite
 	}
-	writer, err := fsutil.NewWriter(root,
+	writer, err := fsutil.NewWriter(workDir,
 		fsutil.WithMode(mode),
 		fsutil.WithLog(opts.Log),
 		fsutil.DryRun(opts.DryRun),
@@ -68,7 +92,7 @@ func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer
 	}
 
 	applicable := reg.Applicable(cfg)
-	fmt.Fprintf(opts.Log, "→ scaffolding into %s\n", root)
+	fmt.Fprintf(opts.Log, "→ scaffolding into %s\n", final)
 	for _, g := range applicable {
 		fmt.Fprintf(opts.Log, "→ %s\n", g.Name())
 		if err := g.Generate(ctx); err != nil {
@@ -80,10 +104,64 @@ func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer
 		return err
 	}
 
-	if opts.DryRun || opts.SkipPostSteps {
+	if opts.DryRun {
 		return nil
 	}
-	return runPostSteps(root, cfg, manifest, opts)
+	if !opts.SkipPostSteps {
+		if err := runPostSteps(workDir, cfg, manifest, opts); err != nil {
+			return err
+		}
+	}
+
+	if err := promote(workDir, final, opts.Overwrite); err != nil {
+		return err
+	}
+	promoted = true
+	return nil
+}
+
+func makeStaging(final string) (string, error) {
+	parent := filepath.Dir(final)
+	base := filepath.Base(final)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return "", fmt.Errorf("create parent for staging: %w", err)
+	}
+	name := "." + base + ".goforge-staging-" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	staging := filepath.Join(parent, name)
+	if err := os.Mkdir(staging, 0o755); err != nil {
+		return "", fmt.Errorf("create staging dir: %w", err)
+	}
+	return staging, nil
+}
+
+func promote(staging, final string, overwrite bool) error {
+	info, err := os.Stat(final)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		// fall through to rename
+	case err != nil:
+		return err
+	case !info.IsDir():
+		return fmt.Errorf("%s exists and is not a directory", final)
+	default:
+		entries, derr := os.ReadDir(final)
+		if derr != nil {
+			return derr
+		}
+		switch {
+		case len(entries) == 0:
+			if rerr := os.Remove(final); rerr != nil {
+				return fmt.Errorf("remove empty final dir: %w", rerr)
+			}
+		case overwrite:
+			if rerr := os.RemoveAll(final); rerr != nil {
+				return fmt.Errorf("remove non-empty final dir: %w", rerr)
+			}
+		default:
+			return fmt.Errorf("output directory %s became non-empty during scaffold", final)
+		}
+	}
+	return os.Rename(staging, final)
 }
 
 func guardRoot(root string, opts Options) error {

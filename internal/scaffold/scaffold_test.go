@@ -2,9 +2,11 @@ package scaffold
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/syed1006/goforge/internal/config"
@@ -22,6 +24,7 @@ type recordingGen struct {
 	apply     bool
 	wroteFile string
 	mods      [][2]string
+	failWith  error
 }
 
 func (r *recordingGen) Name() string                 { return r.name }
@@ -35,7 +38,7 @@ func (r *recordingGen) Generate(ctx *generator.Context) error {
 	for _, m := range r.mods {
 		ctx.Manifest.Require(m[0], m[1])
 	}
-	return nil
+	return r.failWith
 }
 
 func baseCfg(out string) config.Config {
@@ -103,5 +106,53 @@ func TestRunValidatesConfig(t *testing.T) {
 	cfg.ProjectName = "Bad-Name"
 	if err := Run(cfg, generator.NewRegistry(), fakeRenderer{}, Options{Log: io.Discard}); err == nil {
 		t.Fatal("expected validation error")
+	}
+}
+
+func TestRunGeneratorFailureLeavesNoArtifacts(t *testing.T) {
+	t.Parallel()
+	parent := t.TempDir()
+	dir := filepath.Join(parent, "out")
+	cfg := baseCfg(dir)
+
+	reg := generator.NewRegistry()
+	reg.Register(
+		&recordingGen{name: "ok", apply: true, wroteFile: "ok.txt"},
+		&recordingGen{name: "boom", apply: true, failWith: errors.New("kaboom")},
+	)
+
+	err := Run(cfg, reg, fakeRenderer{}, Options{SkipPostSteps: true, Log: io.Discard})
+	if err == nil {
+		t.Fatal("expected error from failing generator")
+	}
+
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("final dir should not exist after failure, stat err: %v", err)
+	}
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		t.Fatalf("ReadDir parent: %v", err)
+	}
+	for _, e := range entries {
+		if strings.Contains(e.Name(), "goforge-staging") {
+			t.Errorf("staging dir leaked: %s", e.Name())
+		}
+	}
+}
+
+func TestRunPromotesIntoPreExistingEmptyDir(t *testing.T) {
+	t.Parallel()
+	dir := filepath.Join(t.TempDir(), "out")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfg := baseCfg(dir)
+	reg := generator.NewRegistry()
+	reg.Register(&recordingGen{name: "g", apply: true, wroteFile: "a.txt"})
+	if err := Run(cfg, reg, fakeRenderer{}, Options{SkipPostSteps: true, Log: io.Discard}); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "a.txt")); err != nil {
+		t.Errorf("expected a.txt in final dir: %v", err)
 	}
 }
