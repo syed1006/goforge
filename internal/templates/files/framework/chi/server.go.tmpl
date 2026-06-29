@@ -8,6 +8,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+{{- if .GraphQL }}
+
+	"{{ .ModulePath }}/graph"
+	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
 )
 
 // New returns a chi router with the application routes mounted.
@@ -20,6 +25,10 @@ func New(logger *slog.Logger) http.Handler {
 
 	r.Get("/healthz", handleHealth)
 	r.Get("/readyz", handleReady)
+{{- if .GraphQL }}
+	r.Method(http.MethodPost, "/graphql", gql.NewHandler(&graph.Resolver{}))
+	r.Method(http.MethodGet, "/playground", gql.NewPlayground("/graphql"))
+{{- end }}
 
 	return r
 }

@@ -7,6 +7,13 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+{{- if .GraphQL }}
+
+	"github.com/gofiber/adaptor/v2"
+
+	"{{ .ModulePath }}/graph"
+	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
 )
 
 // New returns a Fiber app with the application routes mounted.
@@ -22,6 +29,10 @@ func New(logger *slog.Logger, readTimeout, writeTimeout time.Duration) *fiber.Ap
 
 	app.Get("/healthz", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"status": "ok"}) })
 	app.Get("/readyz", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"status": "ready"}) })
+{{- if .GraphQL }}
+	app.Post("/graphql", adaptor.HTTPHandler(gql.NewHandler(&graph.Resolver{})))
+	app.Get("/playground", adaptor.HTTPHandler(gql.NewPlayground("/graphql")))
+{{- end }}
 	return app
 }
 

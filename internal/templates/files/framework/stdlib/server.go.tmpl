@@ -6,6 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+{{- if .GraphQL }}
+
+	"{{ .ModulePath }}/graph"
+	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
 )
 
 // New returns a configured http.Handler with the application routes mounted.
@@ -13,6 +18,10 @@ func New(logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealth)
 	mux.HandleFunc("GET /readyz", handleReady)
+{{- if .GraphQL }}
+	mux.Handle("POST /graphql", gql.NewHandler(&graph.Resolver{}))
+	mux.Handle("GET /playground", gql.NewPlayground("/graphql"))
+{{- end }}
 	return withLogging(logger, mux)
 }
 

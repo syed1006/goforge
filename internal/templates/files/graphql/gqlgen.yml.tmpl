@@ -1,0 +1,22 @@
+# gqlgen configuration. Run `make gql` (or `go run github.com/99designs/gqlgen generate`)
+# to regenerate code from this schema.
+
+schema:
+  - graph/schema.graphqls
+
+exec:
+  filename: graph/generated.go
+  package: graph
+
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+  filename_template: "{name}.resolvers.go"
+
+omit_complexity: true
+omit_gqlgen_file_notice: false

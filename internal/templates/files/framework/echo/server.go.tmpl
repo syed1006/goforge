@@ -8,6 +8,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+{{- if .GraphQL }}
+
+	"{{ .ModulePath }}/graph"
+	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
 )
 
 // New returns an Echo instance with the application routes mounted.
@@ -20,6 +25,10 @@ func New(logger *slog.Logger) *echo.Echo {
 
 	e.GET("/healthz", func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]string{"status": "ok"}) })
 	e.GET("/readyz", func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]string{"status": "ready"}) })
+{{- if .GraphQL }}
+	e.POST("/graphql", echo.WrapHandler(gql.NewHandler(&graph.Resolver{})))
+	e.GET("/playground", echo.WrapHandler(gql.NewPlayground("/graphql")))
+{{- end }}
 	return e
 }
 

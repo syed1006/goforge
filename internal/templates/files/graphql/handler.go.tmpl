@@ -1,0 +1,23 @@
+// Package graphql owns the GraphQL HTTP handler for {{ .ProjectName }}.
+package graphql
+
+import (
+	"net/http"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+
+	"{{ .ModulePath }}/graph"
+)
+
+// NewHandler returns an http.Handler that serves the application's GraphQL API.
+// Mount it at /graphql (POST) in your HTTP framework's router.
+func NewHandler(r *graph.Resolver) http.Handler {
+	return handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: r}))
+}
+
+// NewPlayground returns an http.Handler that serves the GraphQL Playground UI
+// pointed at the supplied endpoint. Mount it at /playground (GET).
+func NewPlayground(endpoint string) http.Handler {
+	return playground.Handler("{{ .ProjectName }}", endpoint)
+}

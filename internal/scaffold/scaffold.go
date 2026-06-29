@@ -85,7 +85,7 @@ func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer
 	if opts.DryRun || opts.SkipPostSteps {
 		return nil
 	}
-	return runPostSteps(root, manifest, opts.Log)
+	return runPostSteps(root, cfg, manifest, opts.Log)
 }
 
 func guardRoot(root string, opts Options) error {
@@ -114,7 +114,7 @@ func writeGoMod(w *fsutil.Writer, cfg config.Config, m *generator.Manifest) erro
 	return w.Write("go.mod", []byte(b.String()), 0o644)
 }
 
-func runPostSteps(root string, m *generator.Manifest, log io.Writer) error {
+func runPostSteps(root string, cfg config.Config, m *generator.Manifest, log io.Writer) error {
 	if _, err := exec.LookPath("go"); err != nil {
 		fmt.Fprintln(log, "warning: go binary not found on PATH; skipping mod resolution")
 		return nil
@@ -134,6 +134,17 @@ func runPostSteps(root string, m *generator.Manifest, log io.Writer) error {
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("go get %s: %w", spec, err)
+		}
+	}
+
+	if cfg.GraphQL {
+		fmt.Fprintln(log, "→ gqlgen generate")
+		cmd := exec.Command("go", "run", "github.com/99designs/gqlgen", "generate")
+		cmd.Dir = root
+		cmd.Stdout = log
+		cmd.Stderr = log
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("gqlgen generate: %w", err)
 		}
 	}
 
