@@ -4,6 +4,7 @@ package generators
 import (
 	"github.com/syed1006/goforge/internal/generator"
 	"github.com/syed1006/goforge/internal/generators/base"
+	"github.com/syed1006/goforge/internal/generators/ci"
 	"github.com/syed1006/goforge/internal/generators/database"
 	"github.com/syed1006/goforge/internal/generators/docker"
 	"github.com/syed1006/goforge/internal/generators/framework"
@@ -25,5 +26,6 @@ func Default() *generator.Registry {
 	reg.Register(hotreload.New())
 	reg.Register(lint.New())
 	reg.Register(docker.New())
+	reg.Register(ci.New())
 	return reg
 }
