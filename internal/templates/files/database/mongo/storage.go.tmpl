@@ -1,0 +1,37 @@
+// Package storage owns the database client for {{ .ProjectName }}.
+package storage
+
+import (
+	"context"
+	"fmt"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"{{ .ModulePath }}/internal/config"
+)
+
+// Storage wraps a Mongo client and the default database handle.
+type Storage struct {
+	Client *mongo.Client
+	DB     *mongo.Database
+}
+
+// New connects to Mongo using cfg.MongoURI and Pings the server.
+func New(ctx context.Context, cfg *config.Config) (*Storage, error) {
+	if cfg.MongoURI == "" {
+		return nil, fmt.Errorf("storage: MONGO_URI is empty")
+	}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURI))
+	if err != nil {
+		return nil, fmt.Errorf("storage: connect: %w", err)
+	}
+	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(ctx)
+		return nil, fmt.Errorf("storage: ping: %w", err)
+	}
+	return &Storage{Client: client, DB: client.Database(cfg.MongoDB)}, nil
+}
+
+// Close disconnects the underlying client. The context bounds the wait.
+func (s *Storage) Close(ctx context.Context) error { return s.Client.Disconnect(ctx) }

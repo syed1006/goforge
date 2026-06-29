@@ -11,6 +11,9 @@ import (
 	"{{ .ModulePath }}/internal/buildinfo"
 	"{{ .ModulePath }}/internal/config"
 	"{{ .ModulePath }}/internal/server"
+{{- if ne (printf "%s" .Database) "none" }}
+	"{{ .ModulePath }}/internal/storage"
+{{- end }}
 )
 
 func main() {
@@ -22,7 +25,7 @@ func main() {
 		logger.Error("load config", "err", err)
 		os.Exit(1)
 	}
-
+{{ template "framework/_storage_block" . }}
 	app := server.New(logger, cfg.ReadTimeout, cfg.WriteTimeout)
 	logger.Info("starting", "service", "{{ .ProjectName }}", "version", buildinfo.Version, "addr", cfg.HTTPAddr)
 

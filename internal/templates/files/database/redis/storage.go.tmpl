@@ -1,0 +1,33 @@
+// Package storage owns the Redis client for {{ .ProjectName }}.
+package storage
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+
+	"{{ .ModulePath }}/internal/config"
+)
+
+// Storage wraps a Redis client.
+type Storage struct {
+	Client *redis.Client
+}
+
+// New connects to Redis using cfg.Redis* and Pings the server.
+func New(ctx context.Context, cfg *config.Config) (*Storage, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisAddr,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	})
+	if err := client.Ping(ctx).Err(); err != nil {
+		_ = client.Close()
+		return nil, fmt.Errorf("storage: ping: %w", err)
+	}
+	return &Storage{Client: client}, nil
+}
+
+// Close releases the underlying client.
+func (s *Storage) Close(_ context.Context) error { return s.Client.Close() }

@@ -1,0 +1,18 @@
+{{- if ne (printf "%s" .Database) "none" }}
+
+	storageCtx, storageCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	store, err := storage.New(storageCtx, cfg)
+	storageCancel()
+	if err != nil {
+		logger.Error("storage", "err", err)
+		os.Exit(1)
+	}
+	defer func() {
+		closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer closeCancel()
+		if err := store.Close(closeCtx); err != nil {
+			logger.Error("storage close", "err", err)
+		}
+	}()
+	_ = store // pass into your handlers / services
+{{- end }}
