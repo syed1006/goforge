@@ -19,6 +19,6 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newNewCmd(), newVersionCmd(), newListCmd())
+	root.AddCommand(newNewCmd(), newVersionCmd(), newListCmd(), newDoctorCmd())
 	return root
 }
