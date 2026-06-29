@@ -1,0 +1,39 @@
+// Package storage owns the database connection pool for demo.
+package storage
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"example.com/demo/internal/config"
+)
+
+// Storage wraps a pgx connection pool.
+type Storage struct {
+	Pool *pgxpool.Pool
+}
+
+// New opens a pgx pool against cfg.DatabaseURL and verifies connectivity with Ping.
+func New(ctx context.Context, cfg *config.Config) (*Storage, error) {
+	if cfg.DatabaseURL == "" {
+		return nil, fmt.Errorf("storage: DATABASE_URL is empty")
+	}
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("storage: open pool: %w", err)
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("storage: ping: %w", err)
+	}
+	return &Storage{Pool: pool}, nil
+}
+
+// Close releases the underlying pool. The context is accepted for parity with
+// drivers that support graceful shutdown; pgx closes synchronously.
+func (s *Storage) Close(_ context.Context) error {
+	s.Pool.Close()
+	return nil
+}
