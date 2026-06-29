@@ -11,9 +11,7 @@ import (
 // in the order they should run.
 func Default() *generator.Registry {
 	reg := generator.NewRegistry()
-	reg.Register(
-		base.New(),
-		framework.NewStdlib(),
-	)
+	reg.Register(base.New())
+	reg.Register(framework.All()...)
 	return reg
 }

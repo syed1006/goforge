@@ -1,0 +1,40 @@
+// Package server holds the HTTP server wiring for {{ .ProjectName }}.
+package server
+
+import (
+	"log/slog"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+)
+
+// New returns a Fiber app with the application routes mounted.
+func New(logger *slog.Logger, readTimeout, writeTimeout time.Duration) *fiber.App {
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+		ReadTimeout:           readTimeout,
+		WriteTimeout:          writeTimeout,
+		AppName:               "{{ .ProjectName }}",
+	})
+	app.Use(recover.New())
+	app.Use(slogMiddleware(logger))
+
+	app.Get("/healthz", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"status": "ok"}) })
+	app.Get("/readyz", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"status": "ready"}) })
+	return app
+}
+
+func slogMiddleware(logger *slog.Logger) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		start := time.Now()
+		err := c.Next()
+		logger.Info("http",
+			"method", c.Method(),
+			"path", c.Path(),
+			"status", c.Response().StatusCode(),
+			"duration_ms", time.Since(start).Milliseconds(),
+		)
+		return err
+	}
+}

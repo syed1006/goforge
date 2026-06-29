@@ -1,0 +1,56 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"{{ .ModulePath }}/internal/buildinfo"
+	"{{ .ModulePath }}/internal/config"
+	"{{ .ModulePath }}/internal/server"
+)
+
+func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Error("load config", "err", err)
+		os.Exit(1)
+	}
+
+	e := server.New(logger)
+	logger.Info("starting", "service", "{{ .ProjectName }}", "version", buildinfo.Version, "addr", cfg.HTTPAddr)
+
+	srv := &http.Server{
+		Addr:         cfg.HTTPAddr,
+		Handler:      e,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("http server", "err", err)
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+	logger.Info("shutting down")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("shutdown", "err", err)
+		os.Exit(1)
+	}
+}

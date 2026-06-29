@@ -70,7 +70,7 @@ func TestRunHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read go.mod: %v", err)
 	}
-	for _, want := range []string{"module github.com/me/myapi", "go 1.23", "github.com/p/q v0.1.0", "github.com/x/y v1.0.0"} {
+	for _, want := range []string{"module github.com/me/myapi", "go 1.23"} {
 		if !bytes.Contains(gomod, []byte(want)) {
 			t.Errorf("go.mod missing %q:\n%s", want, gomod)
 		}

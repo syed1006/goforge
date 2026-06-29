@@ -85,7 +85,7 @@ func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer
 	if opts.DryRun || opts.SkipPostSteps {
 		return nil
 	}
-	return runPostSteps(root, opts.Log)
+	return runPostSteps(root, manifest, opts.Log)
 }
 
 func guardRoot(root string, opts Options) error {
@@ -111,24 +111,41 @@ func guardRoot(root string, opts Options) error {
 func writeGoMod(w *fsutil.Writer, cfg config.Config, m *generator.Manifest) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "module %s\n\ngo %s\n", cfg.ModulePath, m.GoVersion)
-	if req := m.RenderRequires(); req != "" {
-		b.WriteString("\n")
-		b.WriteString(req)
-	}
 	return w.Write("go.mod", []byte(b.String()), 0o644)
 }
 
-func runPostSteps(root string, log io.Writer) error {
-	if _, err := exec.LookPath("go"); err == nil {
-		fmt.Fprintln(log, "→ go mod tidy")
-		cmd := exec.Command("go", "mod", "tidy")
+func runPostSteps(root string, m *generator.Manifest, log io.Writer) error {
+	if _, err := exec.LookPath("go"); err != nil {
+		fmt.Fprintln(log, "warning: go binary not found on PATH; skipping mod resolution")
+		return nil
+	}
+
+	for _, req := range m.Requires() {
+		spec := req.Module
+		if req.Version != "" && req.Version != "latest" {
+			spec = req.Module + "@" + req.Version
+		} else {
+			spec = req.Module + "@latest"
+		}
+		fmt.Fprintf(log, "→ go get %s\n", spec)
+		cmd := exec.Command("go", "get", spec)
 		cmd.Dir = root
 		cmd.Stdout = log
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(log, "warning: go mod tidy failed: %v\n", err)
+			return fmt.Errorf("go get %s: %w", spec, err)
 		}
 	}
+
+	fmt.Fprintln(log, "→ go mod tidy")
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = root
+	tidy.Stdout = log
+	tidy.Stderr = log
+	if err := tidy.Run(); err != nil {
+		fmt.Fprintf(log, "warning: go mod tidy failed: %v\n", err)
+	}
+
 	if _, err := exec.LookPath("gofmt"); err == nil {
 		cmd := exec.Command("gofmt", "-s", "-w", ".")
 		cmd.Dir = root
