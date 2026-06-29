@@ -20,6 +20,7 @@ type newOpts struct {
 	noInteractive bool
 	dryRun        bool
 	overwrite     bool
+	latest        bool
 }
 
 func newNewCmd() *cobra.Command {
@@ -53,6 +54,7 @@ func newNewCmd() *cobra.Command {
 	flags.BoolVar(&o.noInteractive, "no-interactive", false, "Disable interactive prompts; all values must come from flags")
 	flags.BoolVar(&o.dryRun, "dry-run", false, "Walk every generator but write nothing to disk")
 	flags.BoolVar(&o.overwrite, "overwrite", false, "Allow writing into a non-empty output directory")
+	flags.BoolVar(&o.latest, "latest", false, "Resolve every module dependency at @latest instead of the pinned versions")
 
 	return cmd
 }
@@ -99,6 +101,7 @@ func runNew(cmd *cobra.Command, o *newOpts) error {
 	return scaffold.Run(cfg, generators.Default(), eng, scaffold.Options{
 		DryRun:    o.dryRun,
 		Overwrite: o.overwrite,
+		Latest:    o.latest,
 		Log:       os.Stdout,
 	})
 }

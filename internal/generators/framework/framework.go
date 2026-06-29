@@ -6,22 +6,19 @@ import (
 	"github.com/syed1006/goforge/internal/generator"
 )
 
-// All returns every framework generator (one per supported framework).
-func All() []generator.Generator {
+// Versions carries pinned framework module versions.
+type Versions struct {
+	Chi, Gin, Fiber, Echo string
+}
+
+// All returns one generator per supported framework, using versions v.
+func All(v Versions) []generator.Generator {
 	return []generator.Generator{
 		newImpl(config.FrameworkStdlib, "stdlib", nil),
-		newImpl(config.FrameworkChi, "chi", []moduleDep{
-			{"github.com/go-chi/chi/v5", "latest"},
-		}),
-		newImpl(config.FrameworkGin, "gin", []moduleDep{
-			{"github.com/gin-gonic/gin", "latest"},
-		}),
-		newImpl(config.FrameworkFiber, "fiber", []moduleDep{
-			{"github.com/gofiber/fiber/v2", "latest"},
-		}),
-		newImpl(config.FrameworkEcho, "echo", []moduleDep{
-			{"github.com/labstack/echo/v4", "latest"},
-		}),
+		newImpl(config.FrameworkChi, "chi", []moduleDep{{"github.com/go-chi/chi/v5", v.Chi}}),
+		newImpl(config.FrameworkGin, "gin", []moduleDep{{"github.com/gin-gonic/gin", v.Gin}}),
+		newImpl(config.FrameworkFiber, "fiber", []moduleDep{{"github.com/gofiber/fiber/v2", v.Fiber}}),
+		newImpl(config.FrameworkEcho, "echo", []moduleDep{{"github.com/labstack/echo/v4", v.Echo}}),
 	}
 }
 

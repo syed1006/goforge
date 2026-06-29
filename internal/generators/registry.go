@@ -14,15 +14,19 @@ import (
 	"github.com/syed1006/goforge/internal/generators/lint"
 )
 
-// Default returns the default generator registry, with generators registered
-// in the order they should run.
+// Default returns the default generator registry using pinned module versions.
 func Default() *generator.Registry {
 	reg := generator.NewRegistry()
 	reg.Register(base.New())
-	reg.Register(framework.All()...)
-	reg.Register(database.All()...)
-	reg.Register(grpcgen.New())
-	reg.Register(graphql.New())
+	reg.Register(framework.All(framework.Versions{
+		Chi: VersionChi, Gin: VersionGin, Fiber: VersionFiber, Echo: VersionEcho,
+	})...)
+	reg.Register(database.All(database.Versions{
+		Postgres: VersionPgx, MySQL: VersionMySQL, SQLite: VersionSQLite,
+		Mongo: VersionMongo, Redis: VersionRedis,
+	})...)
+	reg.Register(grpcgen.New(VersionGRPC))
+	reg.Register(graphql.New(graphql.Versions{Gqlgen: VersionGqlgen, FiberAdaptor: VersionFiberAdaptor}))
 	reg.Register(hotreload.New())
 	reg.Register(lint.New())
 	reg.Register(docker.New())

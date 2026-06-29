@@ -6,14 +6,19 @@ import (
 	"github.com/syed1006/goforge/internal/generator"
 )
 
-// All returns one generator per supported driver.
-func All() []generator.Generator {
+// Versions carries pinned database driver versions.
+type Versions struct {
+	Postgres, MySQL, SQLite, Mongo, Redis string
+}
+
+// All returns one generator per supported driver, using versions v.
+func All(v Versions) []generator.Generator {
 	return []generator.Generator{
-		newImpl(config.DatabasePostgres, "postgres", []moduleDep{{"github.com/jackc/pgx/v5", "latest"}}),
-		newImpl(config.DatabaseMySQL, "mysql", []moduleDep{{"github.com/go-sql-driver/mysql", "latest"}}),
-		newImpl(config.DatabaseSQLite, "sqlite", []moduleDep{{"modernc.org/sqlite", "latest"}}),
-		newImpl(config.DatabaseMongo, "mongo", []moduleDep{{"go.mongodb.org/mongo-driver", "latest"}}),
-		newImpl(config.DatabaseRedis, "redis", []moduleDep{{"github.com/redis/go-redis/v9", "latest"}}),
+		newImpl(config.DatabasePostgres, "postgres", []moduleDep{{"github.com/jackc/pgx/v5", v.Postgres}}),
+		newImpl(config.DatabaseMySQL, "mysql", []moduleDep{{"github.com/go-sql-driver/mysql", v.MySQL}}),
+		newImpl(config.DatabaseSQLite, "sqlite", []moduleDep{{"modernc.org/sqlite", v.SQLite}}),
+		newImpl(config.DatabaseMongo, "mongo", []moduleDep{{"go.mongodb.org/mongo-driver", v.Mongo}}),
+		newImpl(config.DatabaseRedis, "redis", []moduleDep{{"github.com/redis/go-redis/v9", v.Redis}}),
 	}
 }
 

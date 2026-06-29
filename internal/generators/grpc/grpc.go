@@ -6,15 +6,15 @@ import (
 	"github.com/syed1006/goforge/internal/generator"
 )
 
-// New returns the gRPC generator.
-func New() generator.Generator { return &gen{} }
+// New returns the gRPC generator pinned to grpcVersion.
+func New(grpcVersion string) generator.Generator { return &gen{version: grpcVersion} }
 
-type gen struct{}
+type gen struct{ version string }
 
 func (gen) Name() string                 { return "grpc" }
 func (gen) Applies(c config.Config) bool { return c.GRPC }
 
-func (gen) Generate(ctx *generator.Context) error {
+func (g gen) Generate(ctx *generator.Context) error {
 	cfg := ctx.Config
 	protoDir := "proto/" + ctx.Config.Slug() + "/v1"
 
@@ -34,6 +34,6 @@ func (gen) Generate(ctx *generator.Context) error {
 		}
 	}
 
-	ctx.Manifest.Require("google.golang.org/grpc", "latest")
+	ctx.Manifest.Require("google.golang.org/grpc", g.version)
 	return nil
 }

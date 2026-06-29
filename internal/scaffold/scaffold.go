@@ -17,15 +17,13 @@ import (
 
 // Options tweak orchestrator behavior. The zero value is a sensible default.
 type Options struct {
-	// DryRun prevents disk mutation; the orchestrator still walks every
-	// generator and renders every file, just doesn't commit anything.
-	DryRun bool
-	// Overwrite controls collision behavior when files already exist.
-	Overwrite bool
-	// SkipPostSteps disables go-mod-tidy and gofmt invocations after the writes.
+	DryRun        bool
+	Overwrite     bool
 	SkipPostSteps bool
-	// Log is the destination for progress messages. Defaults to os.Stdout.
-	Log io.Writer
+	// Latest forces every manifest requirement to be fetched at @latest instead
+	// of its pinned version. Use only when you accept the reproducibility cost.
+	Latest bool
+	Log    io.Writer
 }
 
 // Run executes every applicable generator and writes the project tree.
@@ -85,7 +83,7 @@ func Run(cfg config.Config, reg *generator.Registry, renderer generator.Renderer
 	if opts.DryRun || opts.SkipPostSteps {
 		return nil
 	}
-	return runPostSteps(root, cfg, manifest, opts.Log)
+	return runPostSteps(root, cfg, manifest, opts)
 }
 
 func guardRoot(root string, opts Options) error {
@@ -114,26 +112,31 @@ func writeGoMod(w *fsutil.Writer, cfg config.Config, m *generator.Manifest) erro
 	return w.Write("go.mod", []byte(b.String()), 0o644)
 }
 
-func runPostSteps(root string, cfg config.Config, m *generator.Manifest, log io.Writer) error {
+func runPostSteps(root string, cfg config.Config, m *generator.Manifest, opts Options) error {
+	log := opts.Log
 	if _, err := exec.LookPath("go"); err != nil {
 		fmt.Fprintln(log, "warning: go binary not found on PATH; skipping mod resolution")
 		return nil
 	}
 
-	for _, req := range m.Requires() {
-		spec := req.Module
-		if req.Version != "" && req.Version != "latest" {
-			spec = req.Module + "@" + req.Version
-		} else {
-			spec = req.Module + "@latest"
+	reqs := m.Requires()
+	if len(reqs) > 0 {
+		specs := make([]string, 0, len(reqs))
+		for _, req := range reqs {
+			version := req.Version
+			if opts.Latest || version == "" || version == "latest" {
+				version = "latest"
+			}
+			specs = append(specs, req.Module+"@"+version)
 		}
-		fmt.Fprintf(log, "→ go get %s\n", spec)
-		cmd := exec.Command("go", "get", spec)
+		fmt.Fprintf(log, "→ go get %s\n", strings.Join(specs, " "))
+		args := append([]string{"get"}, specs...)
+		cmd := exec.Command("go", args...)
 		cmd.Dir = root
 		cmd.Stdout = log
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("go get %s: %w", spec, err)
+			return fmt.Errorf("go get: %w", err)
 		}
 	}
 

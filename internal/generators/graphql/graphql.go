@@ -6,15 +6,20 @@ import (
 	"github.com/syed1006/goforge/internal/generator"
 )
 
-// New returns the GraphQL generator.
-func New() generator.Generator { return &gen{} }
+// Versions carries pinned GraphQL-related module versions.
+type Versions struct {
+	Gqlgen, FiberAdaptor string
+}
 
-type gen struct{}
+// New returns the GraphQL generator pinned to v.
+func New(v Versions) generator.Generator { return &gen{v: v} }
+
+type gen struct{ v Versions }
 
 func (gen) Name() string                 { return "graphql" }
 func (gen) Applies(c config.Config) bool { return c.GraphQL }
 
-func (gen) Generate(ctx *generator.Context) error {
+func (g gen) Generate(ctx *generator.Context) error {
 	files := []struct{ tmpl, out string }{
 		{"graphql/schema.graphqls", "graph/schema.graphqls"},
 		{"graphql/gqlgen.yml", "gqlgen.yml"},
@@ -31,9 +36,9 @@ func (gen) Generate(ctx *generator.Context) error {
 		}
 	}
 
-	ctx.Manifest.Require("github.com/99designs/gqlgen", "latest")
+	ctx.Manifest.Require("github.com/99designs/gqlgen", g.v.Gqlgen)
 	if ctx.Config.Framework == config.FrameworkFiber {
-		ctx.Manifest.Require("github.com/gofiber/adaptor/v2", "latest")
+		ctx.Manifest.Require("github.com/gofiber/adaptor/v2", g.v.FiberAdaptor)
 	}
 	return nil
 }
