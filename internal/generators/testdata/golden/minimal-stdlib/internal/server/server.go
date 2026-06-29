@@ -13,7 +13,8 @@ func New(logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealth)
 	mux.HandleFunc("GET /readyz", handleReady)
-	return withLogging(logger, mux)
+	var h http.Handler = mux
+	return withLogging(logger, h)
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {

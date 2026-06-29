@@ -12,6 +12,8 @@ import (
 	grpcgen "github.com/syed1006/goforge/internal/generators/grpc"
 	"github.com/syed1006/goforge/internal/generators/hotreload"
 	"github.com/syed1006/goforge/internal/generators/lint"
+	"github.com/syed1006/goforge/internal/generators/metrics"
+	otelgen "github.com/syed1006/goforge/internal/generators/otel"
 )
 
 // Default returns the default generator registry using pinned module versions.
@@ -27,6 +29,11 @@ func Default() *generator.Registry {
 	})...)
 	reg.Register(grpcgen.New(VersionGRPC))
 	reg.Register(graphql.New(graphql.Versions{Gqlgen: VersionGqlgen, FiberAdaptor: VersionFiberAdaptor}))
+	reg.Register(otelgen.New(otelgen.Versions{
+		OTel: VersionOTel, Contrib: VersionOTelContrib,
+		Otelchi: VersionOtelchi, Otelfiber: VersionOtelfiber,
+	}))
+	reg.Register(metrics.New(metrics.Versions{Prom: VersionPromClient, FiberAdaptor: VersionFiberAdaptor}))
 	reg.Register(hotreload.New())
 	reg.Register(lint.New())
 	reg.Register(docker.New())

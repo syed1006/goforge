@@ -13,7 +13,8 @@ import (
 func New(logger *slog.Logger) http.Handler {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery(), slogMiddleware(logger))
+	r.Use(gin.Recovery())
+	r.Use(slogMiddleware(logger))
 
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 	r.GET("/readyz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ready"}) })

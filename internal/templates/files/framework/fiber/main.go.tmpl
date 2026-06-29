@@ -17,6 +17,9 @@ import (
 {{- if ne (printf "%s" .Database) "none" }}
 	"{{ .ModulePath }}/internal/storage"
 {{- end }}
+{{- if .OTel }}
+	"{{ .ModulePath }}/internal/telemetry"
+{{- end }}
 )
 
 func main() {
@@ -28,6 +31,7 @@ func main() {
 		logger.Error("load config", "err", err)
 		os.Exit(1)
 	}
+{{ template "framework/_otel_block" . }}
 {{ template "framework/_storage_block" . }}
 	app := server.New(logger, cfg.ReadTimeout, cfg.WriteTimeout)
 	logger.Info("starting", "service", "{{ .ProjectName }}", "version", buildinfo.Version, "addr", cfg.HTTPAddr)

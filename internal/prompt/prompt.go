@@ -58,6 +58,8 @@ func Ask(seed config.Config) (config.Config, error) {
 	groups = append(groups, huh.NewGroup(
 		huh.NewConfirm().Title("gRPC server?").Value(&cfg.GRPC),
 		huh.NewConfirm().Title("GraphQL server (gqlgen)?").Value(&cfg.GraphQL),
+		huh.NewConfirm().Title("OpenTelemetry tracing (OTLP)?").Value(&cfg.OTel),
+		huh.NewConfirm().Title("Prometheus /metrics endpoint?").Value(&cfg.Metrics),
 		huh.NewConfirm().Title("Hot reload (air)?").Value(&cfg.HotReload),
 		huh.NewConfirm().Title("Linting (golangci-lint + pre-commit)?").Value(&cfg.Lint),
 		huh.NewConfirm().Title("Docker + docker-compose?").Value(&cfg.Docker),
@@ -115,6 +117,8 @@ func Summary(cfg config.Config) string {
 	fmt.Fprintf(&b, "Database:   %s\n", cfg.Database)
 	fmt.Fprintf(&b, "gRPC:       %v\n", cfg.GRPC)
 	fmt.Fprintf(&b, "GraphQL:    %v\n", cfg.GraphQL)
+	fmt.Fprintf(&b, "OTel:       %v\n", cfg.OTel)
+	fmt.Fprintf(&b, "Metrics:    %v\n", cfg.Metrics)
 	fmt.Fprintf(&b, "Hot reload: %v\n", cfg.HotReload)
 	fmt.Fprintf(&b, "Lint:       %v\n", cfg.Lint)
 	fmt.Fprintf(&b, "Docker:     %v\n", cfg.Docker)

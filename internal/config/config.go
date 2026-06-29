@@ -56,6 +56,8 @@ type Config struct {
 	Lint      bool
 	Docker    bool
 	CI        bool
+	OTel      bool
+	Metrics   bool
 }
 
 var (

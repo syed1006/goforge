@@ -8,10 +8,18 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+{{- if .OTel }}
+
+	"github.com/riandyrn/otelchi"
+{{- end }}
 {{- if .GraphQL }}
 
 	"{{ .ModulePath }}/graph"
 	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
+{{- if .Metrics }}
+
+	metricspkg "{{ .ModulePath }}/internal/metrics"
 {{- end }}
 )
 
@@ -21,10 +29,16 @@ func New(logger *slog.Logger) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
+{{- if .OTel }}
+	r.Use(otelchi.Middleware("{{ .ProjectName }}"))
+{{- end }}
 	r.Use(slogMiddleware(logger))
 
 	r.Get("/healthz", handleHealth)
 	r.Get("/readyz", handleReady)
+{{- if .Metrics }}
+	r.Method(http.MethodGet, "/metrics", metricspkg.Handler())
+{{- end }}
 {{- if .GraphQL }}
 	r.Method(http.MethodPost, "/graphql", gql.NewHandler(&graph.Resolver{}))
 	r.Method(http.MethodGet, "/playground", gql.NewPlayground("/graphql"))

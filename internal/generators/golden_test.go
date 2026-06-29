@@ -46,6 +46,14 @@ func TestGenerators_Golden(t *testing.T) {
 				Lint: true, Docker: true, CI: true,
 			},
 		},
+		{
+			name: "echo-otel-metrics",
+			cfg: config.Config{
+				ProjectName: "demo", ModulePath: "example.com/demo", GoVersion: "1.23",
+				Framework: config.FrameworkEcho, Database: config.DatabaseNone,
+				OTel: true, Metrics: true,
+			},
+		},
 	}
 
 	eng, err := template.New(templates.FS())

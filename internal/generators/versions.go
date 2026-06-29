@@ -18,4 +18,11 @@ const (
 
 	VersionGRPC   = "v1.68.0"
 	VersionGqlgen = "v0.17.55"
+
+	VersionOTel        = "v1.31.0" // go.opentelemetry.io/otel + sdk + exporters/otlptrace*
+	VersionOTelContrib = "v0.56.0" // instrumentation/* packages
+	VersionOtelchi     = "v0.7.0"  // riandyrn/otelchi
+	VersionOtelfiber   = "v1.0.10" // gofiber/contrib/otelfiber
+
+	VersionPromClient = "v1.20.5"
 )

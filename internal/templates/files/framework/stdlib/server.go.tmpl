@@ -6,10 +6,18 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+{{- if .OTel }}
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+{{- end }}
 {{- if .GraphQL }}
 
 	"{{ .ModulePath }}/graph"
 	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
+{{- if .Metrics }}
+
+	metricspkg "{{ .ModulePath }}/internal/metrics"
 {{- end }}
 )
 
@@ -18,11 +26,18 @@ func New(logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealth)
 	mux.HandleFunc("GET /readyz", handleReady)
+{{- if .Metrics }}
+	mux.Handle("GET /metrics", metricspkg.Handler())
+{{- end }}
 {{- if .GraphQL }}
 	mux.Handle("POST /graphql", gql.NewHandler(&graph.Resolver{}))
 	mux.Handle("GET /playground", gql.NewPlayground("/graphql"))
 {{- end }}
-	return withLogging(logger, mux)
+	var h http.Handler = mux
+{{- if .OTel }}
+	h = otelhttp.NewHandler(h, "{{ .ProjectName }}")
+{{- end }}
+	return withLogging(logger, h)
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {

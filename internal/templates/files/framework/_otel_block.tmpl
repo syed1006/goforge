@@ -1,0 +1,17 @@
+{{- if .OTel }}
+
+	otelInitCtx, otelInitCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownTracer, err := telemetry.Init(otelInitCtx, "{{ .ProjectName }}", buildinfo.Version)
+	otelInitCancel()
+	if err != nil {
+		logger.Error("init telemetry", "err", err)
+		os.Exit(1)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracer(shutdownCtx); err != nil {
+			logger.Error("shutdown telemetry", "err", err)
+		}
+	}()
+{{- end }}

@@ -24,6 +24,12 @@ can be added without touching the core.
   `gqlgen generate` as a post-step, mounts `/graphql` + `/playground` in the
   selected framework, and supplies a framework-agnostic handler in
   `internal/graphql`.
+- **OpenTelemetry**: optional tracing via `internal/telemetry` with an
+  OTLP/HTTP exporter, W3C TraceContext + Baggage propagators, and the
+  framework-native instrumentation middleware wired in. When gRPC is also
+  enabled, the gRPC server gets `otelgrpc.StatsHandler` automatically.
+- **Prometheus metrics**: optional `/metrics` endpoint with the default
+  registry (Go runtime + process collectors).
 - **Hot reload**: `.air.toml` tuned for the project binary.
 - **Lint**: `.golangci.yml` with a curated linter set + goimports configured
   for the project module, `.pre-commit-config.yaml`, and `.editorconfig`.
@@ -62,6 +68,8 @@ goforge new myapi \
   --database postgres \
   --grpc \
   --graphql \
+  --otel \
+  --metrics \
   --hot-reload \
   --lint \
   --docker \
@@ -95,6 +103,8 @@ internal/generators/
   database/                    postgres | mysql | sqlite | mongo | redis
   grpc/                        gRPC server + buf + sample proto
   graphql/                     gqlgen + handler + schema
+  otel/                        internal/telemetry + framework middleware deps
+  metrics/                     internal/metrics + /metrics route
   hotreload/                   .air.toml
   lint/                        .golangci.yml + pre-commit + editorconfig
   docker/                      Dockerfile + docker-compose + .dockerignore

@@ -1,4 +1,4 @@
-// Package server holds the HTTP server wiring for {{ .ProjectName }}.
+// Package server holds the HTTP server wiring for demo.
 package server
 
 import (
@@ -8,19 +8,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-{{- if .OTel }}
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
-{{- end }}
-{{- if .GraphQL }}
 
-	"{{ .ModulePath }}/graph"
-	gql "{{ .ModulePath }}/internal/graphql"
-{{- end }}
-{{- if .Metrics }}
-
-	metricspkg "{{ .ModulePath }}/internal/metrics"
-{{- end }}
+	metricspkg "example.com/demo/internal/metrics"
 )
 
 // New returns an Echo instance with the application routes mounted.
@@ -29,20 +20,12 @@ func New(logger *slog.Logger) *echo.Echo {
 	e.HideBanner = true
 	e.HidePort = true
 	e.Use(middleware.Recover())
-{{- if .OTel }}
-	e.Use(otelecho.Middleware("{{ .ProjectName }}"))
-{{- end }}
+	e.Use(otelecho.Middleware("demo"))
 	e.Use(slogMiddleware(logger))
 
 	e.GET("/healthz", func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]string{"status": "ok"}) })
 	e.GET("/readyz", func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]string{"status": "ready"}) })
-{{- if .Metrics }}
 	e.GET("/metrics", echo.WrapHandler(metricspkg.Handler()))
-{{- end }}
-{{- if .GraphQL }}
-	e.POST("/graphql", echo.WrapHandler(gql.NewHandler(&graph.Resolver{})))
-	e.GET("/playground", echo.WrapHandler(gql.NewPlayground("/graphql")))
-{{- end }}
 	return e
 }
 

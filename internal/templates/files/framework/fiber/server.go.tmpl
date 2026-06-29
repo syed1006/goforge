@@ -7,12 +7,22 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-{{- if .GraphQL }}
+{{- if or .GraphQL .Metrics }}
 
 	"github.com/gofiber/adaptor/v2"
+{{- end }}
+{{- if .OTel }}
+
+	"github.com/gofiber/contrib/otelfiber"
+{{- end }}
+{{- if .GraphQL }}
 
 	"{{ .ModulePath }}/graph"
 	gql "{{ .ModulePath }}/internal/graphql"
+{{- end }}
+{{- if .Metrics }}
+
+	metricspkg "{{ .ModulePath }}/internal/metrics"
 {{- end }}
 )
 
@@ -25,10 +35,16 @@ func New(logger *slog.Logger, readTimeout, writeTimeout time.Duration) *fiber.Ap
 		AppName:               "{{ .ProjectName }}",
 	})
 	app.Use(recover.New())
+{{- if .OTel }}
+	app.Use(otelfiber.Middleware())
+{{- end }}
 	app.Use(slogMiddleware(logger))
 
 	app.Get("/healthz", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"status": "ok"}) })
 	app.Get("/readyz", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"status": "ready"}) })
+{{- if .Metrics }}
+	app.Get("/metrics", adaptor.HTTPHandler(metricspkg.Handler()))
+{{- end }}
 {{- if .GraphQL }}
 	app.Post("/graphql", adaptor.HTTPHandler(gql.NewHandler(&graph.Resolver{})))
 	app.Get("/playground", adaptor.HTTPHandler(gql.NewPlayground("/graphql")))

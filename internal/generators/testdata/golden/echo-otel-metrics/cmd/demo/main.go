@@ -13,6 +13,7 @@ import (
 	"example.com/demo/internal/buildinfo"
 	"example.com/demo/internal/config"
 	"example.com/demo/internal/server"
+	"example.com/demo/internal/telemetry"
 )
 
 func main() {
@@ -26,13 +27,29 @@ func main() {
 	}
 
 
+	otelInitCtx, otelInitCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownTracer, err := telemetry.Init(otelInitCtx, "demo", buildinfo.Version)
+	otelInitCancel()
+	if err != nil {
+		logger.Error("init telemetry", "err", err)
+		os.Exit(1)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracer(shutdownCtx); err != nil {
+			logger.Error("shutdown telemetry", "err", err)
+		}
+	}()
 
 
+
+	e := server.New(logger)
 	logger.Info("starting", "service", "demo", "version", buildinfo.Version, "addr", cfg.HTTPAddr)
 
 	srv := &http.Server{
 		Addr:         cfg.HTTPAddr,
-		Handler:      server.New(logger),
+		Handler:      e,
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 	}

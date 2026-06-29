@@ -51,6 +51,8 @@ func newNewCmd() *cobra.Command {
 	flags.BoolVar(&o.seed.Lint, "lint", false, "Add golangci-lint and pre-commit")
 	flags.BoolVar(&o.seed.Docker, "docker", false, "Add Dockerfile and docker-compose.yml")
 	flags.BoolVar(&o.seed.CI, "ci", false, "Add GitHub Actions workflow")
+	flags.BoolVar(&o.seed.OTel, "otel", false, "Add OpenTelemetry tracing (OTLP exporter)")
+	flags.BoolVar(&o.seed.Metrics, "metrics", false, "Add Prometheus /metrics endpoint")
 	flags.BoolVar(&o.noInteractive, "no-interactive", false, "Disable interactive prompts; all values must come from flags")
 	flags.BoolVar(&o.dryRun, "dry-run", false, "Walk every generator but write nothing to disk")
 	flags.BoolVar(&o.overwrite, "overwrite", false, "Allow writing into a non-empty output directory")
