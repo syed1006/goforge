@@ -5,6 +5,7 @@ import (
 	"github.com/syed1006/goforge/internal/generator"
 	"github.com/syed1006/goforge/internal/generators/base"
 	"github.com/syed1006/goforge/internal/generators/database"
+	"github.com/syed1006/goforge/internal/generators/docker"
 	"github.com/syed1006/goforge/internal/generators/framework"
 	"github.com/syed1006/goforge/internal/generators/graphql"
 	grpcgen "github.com/syed1006/goforge/internal/generators/grpc"
@@ -23,5 +24,6 @@ func Default() *generator.Registry {
 	reg.Register(graphql.New())
 	reg.Register(hotreload.New())
 	reg.Register(lint.New())
+	reg.Register(docker.New())
 	return reg
 }
