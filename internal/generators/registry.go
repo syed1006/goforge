@@ -9,6 +9,7 @@ import (
 	"github.com/syed1006/goforge/internal/generators/graphql"
 	grpcgen "github.com/syed1006/goforge/internal/generators/grpc"
 	"github.com/syed1006/goforge/internal/generators/hotreload"
+	"github.com/syed1006/goforge/internal/generators/lint"
 )
 
 // Default returns the default generator registry, with generators registered
@@ -21,5 +22,6 @@ func Default() *generator.Registry {
 	reg.Register(grpcgen.New())
 	reg.Register(graphql.New())
 	reg.Register(hotreload.New())
+	reg.Register(lint.New())
 	return reg
 }

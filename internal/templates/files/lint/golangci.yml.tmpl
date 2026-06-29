@@ -1,0 +1,58 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - revive
+    - gocritic
+    - bodyclose
+    - prealloc
+    - misspell
+    - gofmt
+    - goimports
+    - errorlint
+    - nilerr
+    - noctx
+    - nolintlint
+    - unconvert
+    - unparam
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: {{ .ModulePath }}
+  revive:
+    rules:
+      - name: var-naming
+      - name: indent-error-flow
+      - name: error-naming
+      - name: error-return
+      - name: error-strings
+      - name: package-comments
+      - name: exported
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - bodyclose
+        - errcheck
+        - unparam
+{{- if .GraphQL }}
+    - path: graph/generated\.go
+      linters:
+        - all
+    - path: graph/.*\.resolvers\.go
+      linters:
+        - unused
+{{- end }}
