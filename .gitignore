@@ -1,0 +1,18 @@
+# Binaries
+/bin/
+/dist/
+/goforge
+/goforge.exe
+
+# Test & coverage
+*.out
+coverage.*
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local env
+.env
+.env.local
