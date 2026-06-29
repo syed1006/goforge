@@ -1,0 +1,95 @@
+// Package config loads runtime configuration from the environment.
+package config
+
+import (
+	"os"
+	{{- if eq (printf "%s" .Database) "redis" }}
+	"strconv"
+	{{- end }}
+	"time"
+)
+
+// Config holds the runtime configuration loaded from the environment.
+type Config struct {
+	HTTPAddr     string
+	{{- if .GRPC }}
+	GRPCAddr     string
+	{{- end }}
+	LogLevel     string
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	{{- if or (eq (printf "%s" .Database) "postgres") (eq (printf "%s" .Database) "mysql") (eq (printf "%s" .Database) "sqlite") }}
+	DatabaseURL  string
+	{{- end }}
+	{{- if eq (printf "%s" .Database) "mongo" }}
+	MongoURI     string
+	MongoDB      string
+	{{- end }}
+	{{- if eq (printf "%s" .Database) "redis" }}
+	RedisAddr     string
+	RedisPassword string
+	RedisDB       int
+	{{- end }}
+}
+
+// Load returns a Config populated from environment variables, falling back to
+// reasonable defaults for local development.
+func Load() (*Config, error) {
+	cfg := &Config{
+		HTTPAddr:     getenv("HTTP_ADDR", ":8080"),
+		{{- if .GRPC }}
+		GRPCAddr:     getenv("GRPC_ADDR", ":9090"),
+		{{- end }}
+		LogLevel:     getenv("LOG_LEVEL", "info"),
+		ReadTimeout:  getDuration("HTTP_READ_TIMEOUT", 15*time.Second),
+		WriteTimeout: getDuration("HTTP_WRITE_TIMEOUT", 15*time.Second),
+		{{- if or (eq (printf "%s" .Database) "postgres") (eq (printf "%s" .Database) "mysql") }}
+		DatabaseURL:  os.Getenv("DATABASE_URL"),
+		{{- end }}
+		{{- if eq (printf "%s" .Database) "sqlite" }}
+		DatabaseURL:  getenv("DATABASE_URL", "file:./{{ snake .ProjectName }}.db?cache=shared"),
+		{{- end }}
+		{{- if eq (printf "%s" .Database) "mongo" }}
+		MongoURI:     getenv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:      getenv("MONGO_DB", "{{ snake .ProjectName }}"),
+		{{- end }}
+		{{- if eq (printf "%s" .Database) "redis" }}
+		RedisAddr:     getenv("REDIS_ADDR", "localhost:6379"),
+		RedisPassword: os.Getenv("REDIS_PASSWORD"),
+		RedisDB:       getInt("REDIS_DB", 0),
+		{{- end }}
+	}
+	return cfg, nil
+}
+
+func getenv(k, fallback string) string {
+	if v, ok := os.LookupEnv(k); ok && v != "" {
+		return v
+	}
+	return fallback
+}
+
+func getDuration(k string, fallback time.Duration) time.Duration {
+	v := os.Getenv(k)
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+	return d
+}
+{{ if eq (printf "%s" .Database) "redis" }}
+func getInt(k string, fallback int) int {
+	v := os.Getenv(k)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
+}
+{{ end }}

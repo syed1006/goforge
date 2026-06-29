@@ -1,0 +1,70 @@
+# {{ .ProjectName }}
+
+Generated with [goforge](https://github.com/syed1006/goforge).
+
+## Stack
+
+- **Go**: {{ .GoVersion }}
+- **HTTP framework**: {{ .Framework }}
+- **Database**: {{ .Database }}
+{{- if .GRPC }}
+- **gRPC**: enabled
+{{- end }}
+{{- if .GraphQL }}
+- **GraphQL**: enabled (gqlgen)
+{{- end }}
+{{- if .HotReload }}
+- **Hot reload**: enabled (air)
+{{- end }}
+{{- if .Lint }}
+- **Lint**: golangci-lint + pre-commit
+{{- end }}
+{{- if .Docker }}
+- **Docker**: enabled
+{{- end }}
+{{- if .CI }}
+- **CI**: GitHub Actions
+{{- end }}
+
+## Getting started
+
+```sh
+go mod tidy
+{{- if .HotReload }}
+air        # hot-reload dev server
+{{- else }}
+make run   # one-shot run
+{{- end }}
+```
+
+## Layout
+
+```
+cmd/{{ .BinaryName }}/    application entrypoint
+internal/                  private application code
+{{- if .Database }}{{ if ne (printf "%s" .Database) "none" }}
+internal/storage/          database wiring ({{ .Database }})
+{{- end }}{{ end }}
+{{- if .GRPC }}
+proto/                     protobuf service definitions
+internal/grpcsrv/          gRPC server
+{{- end }}
+{{- if .GraphQL }}
+graph/                     gqlgen schema and resolvers
+{{- end }}
+```
+
+## Make targets
+
+```
+make run       # run locally
+make test      # run unit tests
+make build     # build a static binary
+make lint      # golangci-lint run
+make fmt       # gofmt + goimports
+make tidy      # go mod tidy
+{{- if .Docker }}
+make docker    # docker build
+make compose   # docker compose up
+{{- end }}
+```

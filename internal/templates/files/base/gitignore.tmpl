@@ -1,0 +1,23 @@
+# Binaries
+/bin/
+/dist/
+/{{ .BinaryName }}
+/{{ .BinaryName }}.exe
+
+# Tests & coverage
+*.out
+coverage.*
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local env
+.env
+.env.local
+{{ if .HotReload }}
+# air
+/tmp/
+build-errors.log
+{{ end }}

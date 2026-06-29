@@ -1,0 +1,60 @@
+BINARY      := {{ .BinaryName }}
+PKG         := {{ .ModulePath }}
+CMD         := ./cmd/$(BINARY)
+BIN_DIR     := bin
+VERSION     ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS     := -s -w -X $(PKG)/internal/buildinfo.Version=$(VERSION)
+
+.PHONY: all build install run test lint fmt tidy clean{{ if .HotReload }} dev{{ end }}{{ if .Docker }} docker compose{{ end }}{{ if .GRPC }} proto{{ end }}{{ if .GraphQL }} gql{{ end }}
+
+all: build
+
+build:
+	@mkdir -p $(BIN_DIR)
+	go build -trimpath -ldflags '$(LDFLAGS)' -o $(BIN_DIR)/$(BINARY) $(CMD)
+
+install:
+	go install -trimpath -ldflags '$(LDFLAGS)' $(CMD)
+
+run:
+	go run $(CMD)
+{{ if .HotReload }}
+dev:
+	@command -v air >/dev/null 2>&1 || { echo "air not installed: go install github.com/air-verse/air@latest"; exit 1; }
+	air
+{{ end }}
+test:
+	go test ./... -race -count=1
+
+lint:
+{{- if .Lint }}
+	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not installed"; exit 1; }
+	golangci-lint run ./...
+{{- else }}
+	go vet ./...
+{{- end }}
+
+fmt:
+	gofmt -s -w .
+	@command -v goimports >/dev/null 2>&1 && goimports -w . || true
+
+tidy:
+	go mod tidy
+
+clean:
+	rm -rf $(BIN_DIR)
+{{ if .GRPC }}
+proto:
+	@command -v buf >/dev/null 2>&1 || { echo "buf not installed: https://buf.build/docs/installation"; exit 1; }
+	buf generate
+{{ end }}{{ if .GraphQL }}
+gql:
+	@command -v go >/dev/null 2>&1
+	go run github.com/99designs/gqlgen generate
+{{ end }}{{ if .Docker }}
+docker:
+	docker build -t $(BINARY):$(VERSION) .
+
+compose:
+	docker compose up --build
+{{ end }}
