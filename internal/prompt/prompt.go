@@ -5,9 +5,11 @@ package prompt
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/syed1006/goforge/internal/config"
 )
@@ -19,6 +21,8 @@ func Ask(seed config.Config) (config.Config, error) {
 	if cfg.GoVersion == "" {
 		cfg.GoVersion = defaultGoVersion()
 	}
+
+	printBanner(os.Stdout)
 
 	groups := []*huh.Group{}
 
@@ -66,10 +70,18 @@ func Ask(seed config.Config) (config.Config, error) {
 		huh.NewConfirm().Title("GitHub Actions CI?").Value(&cfg.CI),
 	))
 
-	if err := huh.NewForm(groups...).Run(); err != nil {
+	if err := huh.NewForm(groups...).WithTheme(forgeTheme()).Run(); err != nil {
 		return cfg, err
 	}
 	return cfg, nil
+}
+
+func printBanner(w interface{ Write(p []byte) (int, error) }) {
+	amber := lipgloss.AdaptiveColor{Light: "#B45309", Dark: "#F59E0B"}
+	dim := lipgloss.AdaptiveColor{Light: "240", Dark: "243"}
+	title := lipgloss.NewStyle().Foreground(amber).Bold(true).Render("goforge")
+	tag := lipgloss.NewStyle().Foreground(dim).Render("forge a Go project")
+	fmt.Fprintf(w, "\n%s  %s\n\n", title, tag)
 }
 
 func frameworkOptions() []huh.Option[config.Framework] {
